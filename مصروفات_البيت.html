@@ -284,6 +284,11 @@ tbody tr:hover td{background:rgba(6,184,197,0.06)}
 .legend-item .lname{flex:1}
 .legend-item .lval{font-weight:700;font-variant-numeric:tabular-nums}
 
+.payday-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  font-size:12.5px;color:var(--slate);font-weight:600;margin-bottom:16px;
+  padding-bottom:14px;border-bottom:1px solid var(--border);
+}
 .budget-stats{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:14px}
 .bstat .blabel{font-size:12px;color:var(--slate);font-weight:600;margin-bottom:4px}
 .bstat .bvalue{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -345,6 +350,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
       </div>
     </div>
     <div class="header-actions no-print">
+      <button class="icon-btn" id="updateBtn" title="تحقق من وجود نسخة أحدث على GitHub"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> تحديث</button>
       <button class="icon-btn" id="themeBtn" title="تبديل المظهر"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> المظهر</button>
       <button class="icon-btn" onclick="window.print()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> طباعة</button>
       <button class="icon-btn" id="exportBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير CSV</button>
@@ -401,6 +407,10 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 
   <div class="panel" id="budgetPanel">
     <h2 style="--card-accent:var(--primary)"><span class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></span> ميزانية شهر <span id="budgetMonthLabel"></span></h2>
+    <div class="payday-row no-print">
+      <span id="periodStartInfo"></span>
+      <button type="button" class="btn secondary small" id="startNewMonthBtn">🔒 قفل الشهر الحالي وابدأ شهر جديد</button>
+    </div>
     <div class="budget-stats">
       <div class="bstat">
         <div class="blabel">الميزانية</div>
@@ -503,6 +513,8 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 <script>
 (function(){
   "use strict";
+
+  var APP_BUILD = '20260726-143532';
 
   var CATEGORIES = [
     {id:'food',     name:'طعام ومشروبات', color:'#06B8C5'},
@@ -648,15 +660,69 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 
   var filterMonth = document.getElementById('filterMonth');
 
-  function monthKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+  // ---------- شهور بحدود يدوية: تتقفل بضغطة زرار "شهر جديد" مش بيوم ثابت ----------
+  var PERIOD_STARTS_KEY = 'home_expenses_period_starts';
+  var EPOCH_SENTINEL = '2000-01-01';
+
+  function getPeriodStarts(){
+    var raw;
+    try{ raw = JSON.parse(localStorage.getItem(PERIOD_STARTS_KEY) || '[]'); }
+    catch(e){ raw = []; }
+    if(!Array.isArray(raw) || !raw.length) raw = [EPOCH_SENTINEL];
+    raw.sort();
+    return raw;
+  }
+  function savePeriodStarts(list){
+    localStorage.setItem(PERIOD_STARTS_KEY, JSON.stringify(list));
+  }
+
+  function findPeriodKey(dateStr){
+    var starts = getPeriodStarts();
+    var key = starts[0];
+    for(var i=0;i<starts.length;i++){
+      if(starts[i] <= dateStr) key = starts[i]; else break;
+    }
+    return key;
+  }
+  function monthKey(d){ return findPeriodKey(ymd(d)); }
+  function expenseMonthKey(e){ return findPeriodKey(e.date); }
+
   function monthLabel(key){
-    var parts = key.split('-'); var y = parts[0], m = parseInt(parts[1],10)-1;
-    return MONTHS[m] + ' ' + y;
+    var starts = getPeriodStarts();
+    var idx = starts.indexOf(key);
+    var isSentinel = (key === EPOCH_SENTINEL);
+    var startStr = null;
+    if(!isSentinel){
+      var startDate = new Date(key+'T00:00:00');
+      startStr = toArabicDigits(startDate.getDate()) + ' ' + MONTHS[startDate.getMonth()] + ' ' + startDate.getFullYear();
+    }
+    if(idx === starts.length - 1){
+      return isSentinel ? 'الشهر الحالي' : ('من ' + startStr + ' (الشهر الحالي)');
+    }
+    var nextStart = new Date(starts[idx+1]+'T00:00:00');
+    var endDate = new Date(nextStart);
+    endDate.setDate(endDate.getDate()-1);
+    var endStr = toArabicDigits(endDate.getDate()) + ' ' + MONTHS[endDate.getMonth()] + ' ' + endDate.getFullYear();
+    return isSentinel ? ('حتى ' + endStr) : (startStr + ' – ' + endStr);
+  }
+
+  function startNewMonth(){
+    var today = ymd(new Date());
+    var starts = getPeriodStarts();
+    if(starts[starts.length-1] === today){
+      showToast('اتبدأ شهر جديد النهاردة بالفعل');
+      return;
+    }
+    if(!confirm('هيتقفل الشهر الحالي ويبدأ شهر جديد من النهاردة، والمصروفات هتترجع صفر للشهر الجديد. متأكد؟')) return;
+    starts.push(today);
+    savePeriodStarts(starts);
+    showToast('اتقفل الشهر القديم وبدأ شهر جديد من النهاردة');
+    render();
   }
 
   function rebuildMonthFilter(){
     var keys = {};
-    expenses.forEach(function(e){ keys[e.date.slice(0,7)] = true; });
+    expenses.forEach(function(e){ keys[expenseMonthKey(e)] = true; });
     var currentKey = monthKey(new Date());
     keys[currentKey] = true;
     var sorted = Object.keys(keys).sort().reverse();
@@ -688,7 +754,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
     var mv = filterMonth.value;
     var cv = filterCategory.value;
     return expenses.filter(function(e){
-      if(mv && e.date.slice(0,7) !== mv) return false;
+      if(mv && expenseMonthKey(e) !== mv) return false;
       if(cv && e.category !== cv) return false;
       return true;
     }).sort(function(a,b){ return b.date.localeCompare(a.date) || b.createdAt - a.createdAt; });
@@ -767,7 +833,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
     var weekStart = ymd(startOfWeek(now));
     var weekSum = sumWhere(function(e){ return e.date >= weekStart; });
     var mk = monthKey(now);
-    var monthSum = sumWhere(function(e){ return e.date.slice(0,7) === mk; });
+    var monthSum = sumWhere(function(e){ return expenseMonthKey(e) === mk; });
 
     document.getElementById('cardToday').textContent = toArabicDigits(fmtMoney(todaySum)) + ' ج.م';
     document.getElementById('cardWeek').textContent = toArabicDigits(fmtMoney(weekSum)) + ' ج.م';
@@ -783,8 +849,9 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
   function renderBudget(){
     var mk = currentBudgetMonthKey();
     document.getElementById('budgetMonthLabel').textContent = monthLabel(mk);
+    document.getElementById('periodStartInfo').textContent = 'الشهر الحالي: ' + monthLabel(monthKey(new Date()));
 
-    var spent = sumWhere(function(e){ return e.date.slice(0,7) === mk; });
+    var spent = sumWhere(function(e){ return expenseMonthKey(e) === mk; });
     document.getElementById('budgetSpentDisplay').textContent = toArabicDigits(fmtMoney(spent)) + ' ج.م';
 
     var entries = getBudgetEntries(mk).slice().sort(function(a,b){ return b.createdAt - a.createdAt; });
@@ -870,6 +937,8 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
     if(ev.key === 'Enter'){ ev.preventDefault(); addBudgetFromInput(); }
   });
 
+  document.getElementById('startNewMonthBtn').addEventListener('click', startNewMonth);
+
   var budgetListOpen = false;
   document.getElementById('budgetListToggleBtn').addEventListener('click', function(){
     budgetListOpen = !budgetListOpen;
@@ -881,7 +950,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
   function renderDonut(){
     var mk = currentBudgetMonthKey();
     document.getElementById('donutMonthLabel').textContent = monthLabel(mk);
-    var monthExpenses = expenses.filter(function(e){ return e.date.slice(0,7) === mk; });
+    var monthExpenses = expenses.filter(function(e){ return expenseMonthKey(e) === mk; });
     var totals = {};
     CATEGORIES.forEach(function(c){ totals[c.id] = 0; });
     monthExpenses.forEach(function(e){ totals[e.category] = (totals[e.category]||0) + (Number(e.amount)||0); });
@@ -1114,6 +1183,32 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
       render();
     };
     reader.readAsText(file);
+  });
+
+  // ---------- check for update (re-fetches this same page from the server) ----------
+  document.getElementById('updateBtn').addEventListener('click', function(){
+    showToast('جاري التحقق من وجود تحديث...');
+    fetch(location.pathname + '?check=' + Date.now(), {cache:'no-store'})
+      .then(function(res){ return res.text(); })
+      .then(function(text){
+        var m = text.match(/APP_BUILD\s*=\s*'([^']+)'/);
+        var remoteBuild = m ? m[1] : null;
+        if(!remoteBuild){
+          showToast('معرفتش أتحقق من التحديث دلوقتي');
+          return;
+        }
+        if(remoteBuild === APP_BUILD){
+          showToast('التطبيق بالفعل على آخر تحديث ✓');
+        } else {
+          showToast('في تحديث جديد، جاري التحميل...');
+          setTimeout(function(){
+            location.href = location.pathname + '?_=' + Date.now();
+          }, 700);
+        }
+      })
+      .catch(function(){
+        showToast('التحديث محتاج اتصال بالإنترنت');
+      });
   });
 
   // ---------- toast ----------
