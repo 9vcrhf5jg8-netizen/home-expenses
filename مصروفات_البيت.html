@@ -542,6 +542,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 
   <footer>
     أداة مصروفات البيت — البيانات محفوظة على هذا الجهاز فقط، بدون إنترنت
+    <div style="margin-top:6px; font-size:10px; opacity:0.7" id="footerBuild"></div>
   </footer>
 </div>
 
@@ -551,7 +552,8 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 (function(){
   "use strict";
 
-  var APP_BUILD = '20260727-121821';
+  var APP_BUILD = '20260727-125812';
+  document.getElementById('footerBuild').textContent = 'إصدار: ' + APP_BUILD;
 
   var CATEGORIES = [
     {id:'food',     name:'طعام ومشروبات', color:'#06B8C5'},
