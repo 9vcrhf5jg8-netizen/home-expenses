@@ -230,7 +230,10 @@ form.expense-form{
   box-sizing:border-box;
 }
 .field input:focus, .field select:focus{outline:2px solid var(--primary); outline-offset:1px}
-.field input[type="date"]{font-size:13px; padding-inline-end:6px}
+.field input[type="date"]{
+  font-size:13px; padding-inline-end:6px;
+  direction:ltr; text-align:right;
+}
 @media (max-width:600px){
   .field input[type="date"]{font-size:11.5px; padding-inline:8px}
 }
@@ -547,7 +550,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 (function(){
   "use strict";
 
-  var APP_BUILD = '20260727-112226';
+  var APP_BUILD = '20260727-112817';
 
   var CATEGORIES = [
     {id:'food',     name:'طعام ومشروبات', color:'#06B8C5'},
