@@ -280,17 +280,20 @@ tbody tr:hover td{background:rgba(6,184,197,0.06)}
   #expenseTable thead{display:none}
   #expenseTable, #expenseTable tbody, #expenseTable tr, #expenseTable td{display:block; width:100%}
   #expenseTable tr{
-    display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px;
-    border:1px solid var(--border); border-radius:12px;
-    padding:12px; margin-bottom:10px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:5px 7px;
+    border:1px solid var(--border); border-radius:10px;
+    padding:8px 10px; margin-bottom:7px;
   }
   #expenseTable tbody tr:hover td{background:none}
   #expenseTable td{border:none; padding:0; width:auto}
-  #expenseTable td:nth-child(1){order:1; font-size:12px; color:var(--slate); font-weight:600}
+  #expenseTable td:nth-child(1){order:1; font-size:11px; color:var(--slate); font-weight:600; flex-shrink:0}
   #expenseTable td:nth-child(2){order:2}
-  #expenseTable td:nth-child(4){order:3; margin-inline-start:auto}
-  #expenseTable td:nth-child(3){order:4; flex-basis:100%; color:var(--slate); font-size:13px}
-  #expenseTable td:nth-child(5){order:5; flex-basis:100%; margin-top:4px}
+  #expenseTable td:nth-child(2) .cat-pill{font-size:10.5px; padding:2px 8px}
+  #expenseTable td:nth-child(4){order:3; font-size:13px; margin-inline-start:auto}
+  #expenseTable td:nth-child(5){order:4; flex-shrink:0}
+  #expenseTable td:nth-child(3){order:5; flex-basis:100%; color:var(--slate); font-size:11.5px; margin-top:1px}
+  #expenseTable .row-action-btn{padding:5px 6px}
+  #expenseTable .row-action-btn .btn-label{display:none}
 }
 .empty-state{text-align:center;padding:40px 10px;color:var(--slate)}
 .empty-state .big{
@@ -538,7 +541,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 (function(){
   "use strict";
 
-  var APP_BUILD = '20260726-164758';
+  var APP_BUILD = '20260727-103649';
 
   var CATEGORIES = [
     {id:'food',     name:'طعام ومشروبات', color:'#06B8C5'},
@@ -823,14 +826,16 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
       rowActions.style.gap = '6px';
 
       var editBtn = document.createElement('button');
-      editBtn.className = 'btn secondary small';
-      editBtn.textContent = 'تعديل';
+      editBtn.className = 'btn secondary small row-action-btn';
+      editBtn.title = 'تعديل';
+      editBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="btn-label">تعديل</span>';
       editBtn.addEventListener('click', function(){ startEditExpense(e); });
       rowActions.appendChild(editBtn);
 
       var delBtn = document.createElement('button');
-      delBtn.className = 'btn danger small';
-      delBtn.textContent = 'حذف';
+      delBtn.className = 'btn danger small row-action-btn';
+      delBtn.title = 'حذف';
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span class="btn-label">حذف</span>';
       delBtn.addEventListener('click', function(){
         if(confirm('حذف هذه العملية؟')){
           if(editingId === e.id) cancelEdit();
