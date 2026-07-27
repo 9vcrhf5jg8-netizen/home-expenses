@@ -226,8 +226,14 @@ form.expense-form{
   background:var(--surface);
   color:var(--ink);
   width:100%;
+  min-width:0;
+  box-sizing:border-box;
 }
 .field input:focus, .field select:focus{outline:2px solid var(--primary); outline-offset:1px}
+.field input[type="date"]{font-size:13px; padding-inline-end:6px}
+@media (max-width:600px){
+  .field input[type="date"]{font-size:11.5px; padding-inline:8px}
+}
 .btn{
   font-family:inherit;
   font-size:14px;
@@ -432,6 +438,32 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
     </div>
   </div>
 
+  <div class="panel no-print">
+    <h2 style="--card-accent:var(--primary)"><span class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span> <span id="formTitle">إضافة مصروف جديد</span></h2>
+    <form class="expense-form" id="expenseForm">
+      <div class="field">
+        <label>التاريخ</label>
+        <input type="date" id="fDate" required>
+      </div>
+      <div class="field">
+        <label>البند</label>
+        <select id="fCategory" required></select>
+      </div>
+      <div class="field">
+        <label>الوصف</label>
+        <input type="text" id="fDesc" placeholder="مثال: خضار وفاكهة">
+      </div>
+      <div class="field">
+        <label>المبلغ (جنيه)</label>
+        <input type="number" id="fAmount" min="0" step="0.01" placeholder="0.00" required>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="submit" class="btn" id="submitBtn">إضافة +</button>
+        <button type="button" class="btn secondary" id="cancelEditBtn" style="display:none">إلغاء</button>
+      </div>
+    </form>
+  </div>
+
   <div class="panel" id="budgetPanel">
     <h2 style="--card-accent:var(--primary)"><span class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></span> ميزانية شهر <span id="budgetMonthLabel"></span></h2>
     <div class="payday-row no-print">
@@ -463,32 +495,6 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
       </button>
     </div>
     <div class="budget-list" id="budgetList" style="display:none"></div>
-  </div>
-
-  <div class="panel no-print">
-    <h2 style="--card-accent:var(--primary)"><span class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span> <span id="formTitle">إضافة مصروف جديد</span></h2>
-    <form class="expense-form" id="expenseForm">
-      <div class="field">
-        <label>التاريخ</label>
-        <input type="date" id="fDate" required>
-      </div>
-      <div class="field">
-        <label>البند</label>
-        <select id="fCategory" required></select>
-      </div>
-      <div class="field">
-        <label>الوصف</label>
-        <input type="text" id="fDesc" placeholder="مثال: خضار وفاكهة">
-      </div>
-      <div class="field">
-        <label>المبلغ (جنيه)</label>
-        <input type="number" id="fAmount" min="0" step="0.01" placeholder="0.00" required>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button type="submit" class="btn" id="submitBtn">إضافة +</button>
-        <button type="button" class="btn secondary" id="cancelEditBtn" style="display:none">إلغاء</button>
-      </div>
-    </form>
   </div>
 
   <div class="panel">
@@ -541,7 +547,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 (function(){
   "use strict";
 
-  var APP_BUILD = '20260727-103649';
+  var APP_BUILD = '20260727-112226';
 
   var CATEGORIES = [
     {id:'food',     name:'طعام ومشروبات', color:'#06B8C5'},
