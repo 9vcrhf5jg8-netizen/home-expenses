@@ -466,6 +466,10 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
         <button type="button" class="btn secondary" id="cancelEditBtn" style="display:none">إلغاء</button>
       </div>
     </form>
+    <div class="no-print" style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px">
+      <button type="button" class="btn secondary small" id="diagBtn">🔧 تشخيص مساحة الخانتين</button>
+      <pre id="diagOutput" style="display:none; white-space:pre-wrap; font-size:12px; margin-top:10px; padding:10px; background:var(--surface); border-radius:8px; direction:ltr; text-align:left"></pre>
+    </div>
   </div>
 
   <div class="panel" id="budgetPanel">
@@ -552,7 +556,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 (function(){
   "use strict";
 
-  var APP_BUILD = '20260727-131126';
+  var APP_BUILD = '20260727-131847';
   document.getElementById('footerBuild').textContent = 'إصدار: ' + APP_BUILD;
 
   var CATEGORIES = [
@@ -1283,6 +1287,37 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ t.classList.remove('show'); }, duration || 2200);
   }
+
+  // ---------- temporary diagnostic ----------
+  document.getElementById('diagBtn').addEventListener('click', function(){
+    var fields = document.querySelectorAll('.expense-form .field');
+    var dateField = fields[0];
+    var catField = fields[1];
+    var dr = dateField.getBoundingClientRect();
+    var cr = catField.getBoundingClientRect();
+    var form = document.getElementById('expenseForm');
+    var formCS = getComputedStyle(form);
+    var dateInput = document.getElementById('fDate');
+    var catSelect = document.getElementById('fCategory');
+    var lines = [];
+    lines.push('عرض الشاشة (innerWidth): ' + window.innerWidth);
+    lines.push('devicePixelRatio: ' + window.devicePixelRatio);
+    lines.push('');
+    lines.push('grid-template-columns: ' + formCS.gridTemplateColumns);
+    lines.push('column-gap: ' + formCS.columnGap);
+    lines.push('');
+    lines.push('خانة التاريخ (field): left=' + Math.round(dr.left) + ' right=' + Math.round(dr.right) + ' width=' + Math.round(dr.width));
+    lines.push('خانة البند (field):   left=' + Math.round(cr.left) + ' right=' + Math.round(cr.right) + ' width=' + Math.round(cr.width));
+    lines.push('الفاصل الفعلي بينهم: ' + Math.round(dr.left - cr.right));
+    lines.push('');
+    var dir2 = dateInput.getBoundingClientRect();
+    var cs2 = catSelect.getBoundingClientRect();
+    lines.push('input[date] نفسه: left=' + Math.round(dir2.left) + ' right=' + Math.round(dir2.right) + ' width=' + Math.round(dir2.width));
+    lines.push('select[البند] نفسه: left=' + Math.round(cs2.left) + ' right=' + Math.round(cs2.right) + ' width=' + Math.round(cs2.width));
+    var out = document.getElementById('diagOutput');
+    out.textContent = lines.join('\n');
+    out.style.display = 'block';
+  });
 
   render();
 })();
