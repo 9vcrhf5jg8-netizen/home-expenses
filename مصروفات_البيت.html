@@ -186,6 +186,7 @@ header.band .wrap{display:flex;align-items:center;justify-content:space-between;
 .card .value{font-size:21px;font-weight:800;color:var(--ink)}
 .card .value.accent{color:var(--accent)}
 .card .value.good{color:var(--good)}
+.card .value.danger{color:var(--danger)}
 .card .unit{font-size:12px;color:var(--slate);font-weight:400;margin-inline-start:4px}
 
 .panel{
@@ -435,12 +436,12 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
       </div>
       <div class="value" id="cardMonth">٠</div>
     </div>
-    <div class="card" style="--card-accent:var(--good)">
+    <div class="card" id="cardRemainingWrap" style="--card-accent:var(--good)">
       <div class="card-head">
-        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>
-        <div class="label">عدد العمليات</div>
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg></div>
+        <div class="label">المتبقي من الميزانية</div>
       </div>
-      <div class="value good" id="cardCount">٠</div>
+      <div class="value good" id="cardRemaining">—</div>
     </div>
   </div>
 
@@ -554,13 +555,14 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
 (function(){
   "use strict";
 
-  var APP_BUILD = '20260729-125646';
+  var APP_BUILD = '20260729-131015';
   document.getElementById('footerBuild').textContent = 'إصدار: ' + APP_BUILD;
 
   var CATEGORIES = [
     {id:'food',     name:'طعام ومشروبات', color:'#06B8C5'},
     {id:'transport', name:'مواصلات',       color:'#57C4C9'},
     {id:'bills',    name:'فواتير',        color:'#ED683A'},
+    {id:'installments',name:'أقساط',      color:'#C0392B'},
     {id:'home',     name:'منزل وصيانة',    color:'#8E6FD1'},
     {id:'health',   name:'صحة',           color:'#2FA36B'},
     {id:'exercise', name:'تمرين',         color:'#8BC34A'},
@@ -881,7 +883,21 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
     document.getElementById('cardToday').textContent = toArabicDigits(fmtMoney(todaySum)) + ' ج.م';
     document.getElementById('cardWeek').textContent = toArabicDigits(fmtMoney(weekSum)) + ' ج.م';
     document.getElementById('cardMonth').textContent = toArabicDigits(fmtMoney(monthSum)) + ' ج.م';
-    document.getElementById('cardCount').textContent = toArabicDigits(expenses.length);
+
+    var budgetTotal = getBudgetTotal(mk);
+    var cardRemaining = document.getElementById('cardRemaining');
+    var cardRemainingWrap = document.getElementById('cardRemainingWrap');
+    if(budgetTotal > 0){
+      var remaining = budgetTotal - monthSum;
+      cardRemaining.textContent = (remaining < 0 ? '-' : '') + toArabicDigits(fmtMoney(Math.abs(remaining))) + ' ج.م';
+      cardRemaining.classList.remove('accent','good','danger');
+      cardRemaining.classList.add(remaining < 0 ? 'danger' : 'good');
+      cardRemainingWrap.style.setProperty('--card-accent', remaining < 0 ? 'var(--danger)' : 'var(--good)');
+    } else {
+      cardRemaining.textContent = 'لم تُحدد ميزانية';
+      cardRemaining.classList.remove('accent','good','danger');
+      cardRemainingWrap.style.setProperty('--card-accent', 'var(--slate)');
+    }
   }
 
   // ---------- budget ----------
@@ -948,9 +964,11 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
         delBtn.className = 'btn danger small no-print';
         delBtn.textContent = 'حذف';
         delBtn.addEventListener('click', function(){
+          if(!confirm('حذف هذه الإضافة من الميزانية؟')) return;
           budgets[mk] = getBudgetEntries(mk).filter(function(x){ return x.id !== entry.id; });
           saveBudgets(budgets);
           renderBudget();
+          renderCards();
         });
         row.appendChild(delBtn);
 
@@ -973,6 +991,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
     input.value = '';
     showToast('تمت إضافة ' + toArabicDigits(fmtMoney(val)) + ' ج.م لميزانية ' + monthLabel(mk));
     renderBudget();
+    renderCards();
   }
 
   document.getElementById('budgetSaveBtn').addEventListener('click', addBudgetFromInput);
@@ -1114,6 +1133,7 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:20px 0 6px}
       return;
     }
     if(editingId){
+      if(!confirm('حفظ التعديلات على هذا المصروف؟')) return;
       var target = null;
       for(var i=0;i<expenses.length;i++){
         if(expenses[i].id === editingId){ target = expenses[i]; break; }
